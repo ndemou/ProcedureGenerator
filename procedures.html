@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="en">
+   <head>
+      <meta charset="UTF-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <title>Full Page Input with String Storage</title>
+      <style>
+         html,
+         body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            overflow: hidden;
+         }
+         textarea {
+            width: 100%;
+            height: 100%;
+            border: none;
+            outline: none;
+            resize: none;
+            font-family: Arial, sans-serif;
+            font-size: 16px;
+            padding: 10px;
+            box-sizing: border-box;
+         }
+         .button-container {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+         }
+         button {
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+            padding: 8px 16px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+         }
+         button:hover {
+            background-color: #0056b3;
+         }
+      </style>
+   </head>
+   <body>
+      <textarea id="inputBox" placeholder="Type here..."></textarea>
+      <div class="button-container">
+         <button onclick="storeInput()">Generate</button>
+      </div>
+      <div id="websiteText"></div>
+      <div id="website_content"></div>
+
+      <script defer>
+         function focusNextQuestion() {
+            if (allSteps > currentStep) {
+               const questions =
+                  document.getElementById("website_content").children;
+               // TODO the making of the array should be it's own function
+               const focusableElements = [];
+               let index = 0;
+               for (let i = 0; i < questions.length; i++) {
+                  if (questions[i].querySelector("input, button")) {
+                     focusableElements[index] =
+                        questions[i].querySelector("input, button");
+                     index++;
+                  }
+               }
+               console.log(focusableElements);
+               console.log(currentStep);
+               focusableElements[currentStep].focus();
+            }
+         }
+
+         function createInputQuestion(questionText, type, callback) {
+            // console.log("I get called");
+            const questionContainer = document.createElement("div");
+            // const questionTextElement = document.createElement("span");
+            // questionTextElement.textContent = questionText;
+            questionContainer.innerText = questionText;
+            const input = document.createElement("input");
+            input.type = type;
+            // questionContainer.appendChild(questionTextElement);
+            questionContainer.appendChild(input);
+            const element = document.getElementById("website_content");
+            if (element) {
+               element.appendChild(questionContainer);
+            }
+            // input.focus();
+            input.addEventListener("keydown", function (event) {
+               if (
+                  event.key === "Enter" &&
+                  input.value.trim() !== "" &&
+                  input.checkValidity()
+               ) {
+                  event.preventDefault();
+                  const inputValue = input.value;
+                  callback(inputValue);
+                  focusNextQuestion();
+               }
+            });
+         }
+
+         function createText(text) {
+            const line = document.createElement("div");
+            // TODO
+            //console.log("Text is:", text);
+            line.innerHTML = markdown(text);
+            const mainBody = document.getElementById("website_content");
+            mainBody.appendChild(line);
+         }
+
+         function createMultipleChoiceQuestion(
+            questionText,
+            options,
+            num,
+            callback
+         ) {
+            finished = false;
+            const questionContainer = document.createElement("div");
+            questionContainer.innerText = questionText;
+
+            for (let i = 0; i < num; i++) {
+               const tempButton = document.createElement("button");
+               tempButton.innerHTML = options[i];
+               tempButton.style.marginLeft = "3px";
+               questionContainer.appendChild(tempButton);
+            }
+            const buttons = questionContainer.querySelectorAll("button");
+            buttons.forEach((button) => {
+               button.addEventListener("click", () => {
+                  // change button color when clicked
+                  button.style.backgroundColor = "#e64833";
+                  button.style.outline = `2px solid #ffffff`;
+
+                  callback(button.innerText);
+                  focusNextQuestion();
+               });
+            });
+            document
+               .getElementById("website_content")
+               .appendChild(questionContainer);
+         }
+
+         function answerYes(answerText) {
+            const answerContainer = document.createElement("div");
+            answerContainer.innerHTML = `
+      <p>${answerText}</p>
+   `;
+            // answer.appendChild(answerContainer);
+            document
+               .getElementById("website_content")
+               .appendChild(answerContainer);
+         }
+
+         function answerNo(answerText) {
+            const answerContainer = document.createElement("div");
+            if (answerText != "") {
+               answerContainer.innerHTML = `
+        <p>${answerText}</p>
+        `;
+               document
+                  .getElementById("website_content")
+                  .appendChild(answerContainer);
+            }
+         }
+
+         function createYesOrNoQuestion(yesText, noText, callback) {
+            finished = false;
+            const questionContainer = document.createElement("div");
+            questionContainer.innerHTML = `
+      <p>${questionText}
+      <button>YES</button>
+      <button>NO</button>
+      </p>
+   `;
+            const buttons = questionContainer.querySelectorAll("button");
+            buttons[0].onclick = () => {
+               answerYes(yesText);
+               callback();
+            };
+            buttons[1].onclick = () => {
+               answerNo(noText);
+               callback();
+            };
+            document
+               .getElementById("website_content")
+               .appendChild(questionContainer);
+         }
+
+         window.createInputQuestion = createInputQuestion;
+         window.createMultipleChoiceQuestion = createMultipleChoiceQuestion;
+         window.focusNextQuestion = focusNextQuestion;
+         window.answerYes = answerYes;
+         window.answerNo = answerNo;
+         window.createYesOrNoQuestion = createYesOrNoQuestion;
+         window.createText = createText;
+      </script>
+      <script defer>
+         function updateFieldIfExists(variables, fieldName, answer) {
+            if (variables.hasOwnProperty(fieldName)) {
+               variables[fieldName] = answer;
+            }
+         }
+
+         function variableReader(textFile) {
+            const firstRegex = /\[[a-z_][a-z0-9_]*\](\([^)]*\))?\s*$/gim;
+
+            const varMatches = Array.from(textFile.matchAll(firstRegex));
+
+            console.log(varMatches);
+
+            const regexForVar = /\[[a-z_][a-z0-9_]*\]/gi;
+
+            const cleanVar = varMatches.map((match) => {
+               const variable = match[0].match(regexForVar)[0];
+               return variable.substring(1, variable.length - 1);
+            });
+
+            console.log(cleanVar);
+
+            cleanVar.forEach((varName) => {
+               // variables[varName] = null;
+               console.log(varName);
+               eval(`window.${varName} = "";`);
+            });
+         }
+
+         function splitSteps(textFile) {
+            // splits the file into stpes based on --- and #
+            // const steps = textFile.split(/(?:---|\n# )/);
+            const steps = textFile.split(/(?:---)/);
+
+            const stepsArray = steps.map((step) => {
+               return step.trim();
+            });
+            return stepsArray;
+         }
+
+         function qeustionParsing(line) {
+            const regexForMultipleChoice = /\(One of: [A-Za-z0-9_, ]+\)$/;
+            if (regexForMultipleChoice.test(line)) {
+               const str = line.substring(2).trim();
+               console.log("mutliple choice: " + str);
+               const regexForSpliting = /^(.*)\[(.*?)\]\(One of: (.*?)\)$/;
+               // TODO add no numbers at the start of the variable
+               const match = str.match(regexForSpliting);
+               // making the array that holds the options
+               const questions = match[3]
+                  .split(",")
+                  .map((option) => option.trim());
+               // console.log("Question:", match[1]);
+               console.log("Field:", match[2]);
+               if (match[2] in globalThis) {
+                  createMultipleChoiceQuestion(
+                     match[1],
+                     questions,
+                     questions.length,
+                     (answer) => {
+                        // variables[match[2]] = answer;
+                        globalThis[match[2]] = answer;
+                        console.log(match[2]);
+                        currentStep++;
+                     }
+                  );
+               }
+            } else {
+               // Normal input question
+               const str = line.substring(2).trim();
+               // regex that splits the question in three parts.
+               // The actual question, the variable, and the question type;
+               // TODO no numbers at the start of the variable
+               const regexForSpliting = /^(.*?)\[(.*?)\](?:\(([^)]+)\))?$/;
+
+               const match = str.match(regexForSpliting);
+               console.log("Question: ", match[1]);
+               console.log("Field: ", match[2]);
+               const type = match[3] || "text";
+               console.log("Type: ", type);
+
+               if (match[2] in globalThis) {
+                  console.log("We creating the type: ", type);
+                  createInputQuestion(match[1], type, (answer) => {
+                     // variables[match[2]] = answer;
+                     globalThis[match[2]] = answer;
+                     console.log(match[2]);
+                     currentStep++;
+                  });
+               }
+            }
+            allSteps++;
+            console.log("All steps are: " + allSteps);
+         }
+
+         function checkForMultiLineEval(step, i) {
+            console.log("Found opening {");
+            i++;
+            let code = ``;
+            while (i < step.length && step[i].trimEnd() != "}") {
+               // console.log("Proccesing line: " + step[i] + " at index: " + i);
+               code += step[i] + "\n";
+               i++;
+            }
+            console.log(code);
+            eval(code);
+            // console.log(country);
+            if (i < step.length && step[i].trimEnd() === "}") {
+               console.log("Found closing bracket");
+            } else {
+               console.log("Error: no closing bracket found");
+            }
+            return i;
+         }
+
+         function checkForCodeInLine(line) {
+            const regex = /\{\s*[a-zA-Z_$][a-zA-Z0-9_$]*\s*\}/g;
+            const matches = Array.from(line.matchAll(regex));
+            const matchedStrings = matches.map((match) => match[0]);
+            for (let i = 0; i < matchedStrings.length; i++) {
+               line = line.replace(
+                  matchedStrings[i],
+                  globalThis[
+                     matchedStrings[i].substring(
+                        1,
+                        matchedStrings[i].length - 1
+                     )
+                  ]
+               );
+            }
+            return line;
+         }
+
+         function checkForShowIf(step, i) {
+            const regexForDeleting = /showif|\(|\)|\{|\}/g;
+            const expr = step[i].replace(regexForDeleting, "").trim();
+            let code = ``;
+            const bool = eval(expr);
+            i++;
+            while (i < step.length && step[i].trim() !== "}") {
+               if (step[i].trim().startsWith("{showif")) {
+                  if (bool) {
+                     createText(code);
+                     code = "";
+                     i = checkForShowIf(step, i);
+                     i++;
+                  }
+               }
+               code += step[i] + "\n";
+               i++;
+            }
+            if (bool) {
+               createText(code);
+            }
+            return i;
+         }
+
+         function parser(steps) {
+            // makes an array of arrays and in every array is made of the steps that have been split into lines
+            const linesPerStep = steps.map((step) => step.split("\n"));
+
+            // iterates the outer array
+            let promise = Promise.resolve();
+            // this is the first loop which iterates through an array of arrays
+            // Each inner array is a step which consists of lines that need to be parsed
+            linesPerStep.forEach((step) => {
+               promise = promise.then(() => {
+                  console.log("New Step");
+                  // iterates the inner arrays line by line
+                  allSteps = 1;
+                  finished = false;
+
+                  //! main loop for parsing every line
+                  for (let i = 0; i < step.length; i++) {
+                     let line = step[i];
+
+                     if (line.trim().startsWith("Q:")) {
+                        qeustionParsing(line);
+                     } else if (line.trimEnd() === "{") {
+                        i = checkForMultiLineEval(step, i);
+                     } else if (line.trim().startsWith("{showif")) {
+                        i = checkForShowIf(step, i);
+                     } else {
+                        const regex = /\{\s*[a-zA-Z_$][a-zA-Z0-9_$]*\s*\}/g;
+                        if (line.match(regex)) {
+                           line = checkForCodeInLine(line);
+                        }
+                        createText(line);
+                     }
+                  }
+
+                  createText("\n---\n");
+                  // checks if the next button is clicked so we can move to the next step
+                  return new Promise((resolve) => {
+                     const divForButton = document.createElement("div");
+                     const button = document.createElement("button");
+                     button.innerText = "NEXT";
+                     button.addEventListener("click", () => {
+                        resolve();
+                        button.remove();
+                     });
+                     divForButton.appendChild(button);
+                     const body = document.getElementById("website_content");
+                     body.appendChild(divForButton);
+                  });
+               });
+            });
+            promise.then(() => console.log("Loop Finished"));
+         }
+
+         /**
+          * drawdown.js
+          * (c) Adam Leggett
+          */
+
+         function markdown(src) {
+            var rx_lt = /</g;
+            var rx_gt = />/g;
+            var rx_space = /\t|\r|\uf8ff/g;
+            var rx_escape = /\\([\\\|`*_{}\[\]()#+\-~])/g;
+            var rx_hr = /^([*\-=_] *){3,}$/gm;
+            var rx_blockquote = /\n *&gt; *([^]*?)(?=(\n|$){2})/g;
+            var rx_list =
+               /\n( *)(?:[*\-+]|((\d+)|([a-z])|[A-Z])[.)]) +([^]*?)(?=(\n|$){2})/g;
+            var rx_listjoin = /<\/(ol|ul)>\n\n<\1>/g;
+            var rx_highlight =
+               /(^|[^A-Za-z\d\\])(([*_])|(~)|(\^)|(--)|(\+\+)|`)(\2?)([^<]*?)\2\8(?!\2)(?=\W|_|$)/g;
+            var rx_code = /\n((```|~~~).*\n?([^]*?)\n?\2|((    .*?\n)+))/g;
+            var rx_link =
+               /((!?)\[(.*?)\]\((.*?)( ".*")?\)|\\([\\`*_{}\[\]()#+\-.!~]))/g;
+            var rx_table = /\n(( *\|.*?\| *\n)+)/g;
+            var rx_thead = /^.*\n( *\|( *\:?-+\:?-+\:? *\|)* *\n|)/;
+            var rx_row = /.*\n/g;
+            var rx_cell = /\||(.*?[^\\])\|/g;
+            var rx_heading =
+               /(?=^|>|\n)([>\s]*?)(#{1,6}) (.*?)( #*)? *(?=\n|$)/g;
+            var rx_para = /(?=^|>|\n)\s*\n+([^<]+?)\n+\s*(?=\n|<|$)/g;
+            var rx_stash = /-\d+\uf8ff/g;
+
+            function replace(rex, fn) {
+               src = src.replace(rex, fn);
+            }
+
+            function element(tag, content) {
+               return "<" + tag + ">" + content + "</" + tag + ">";
+            }
+
+            function blockquote(src) {
+               return src.replace(rx_blockquote, function (all, content) {
+                  return element(
+                     "blockquote",
+                     blockquote(highlight(content.replace(/^ *&gt; */gm, "")))
+                  );
+               });
+            }
+
+            function list(src) {
+               return src.replace(
+                  rx_list,
+                  function (all, ind, ol, num, low, content) {
+                     var entry = element(
+                        "li",
+                        highlight(
+                           content
+                              .split(
+                                 RegExp(
+                                    "\n ?" +
+                                       ind +
+                                       "(?:(?:\\d+|[a-zA-Z])[.)]|[*\\-+]) +",
+                                    "g"
+                                 )
+                              )
+                              .map(list)
+                              .join("</li><li>")
+                        )
+                     );
+
+                     return (
+                        "\n" +
+                        (ol
+                           ? '<ol start="' +
+                             (num
+                                ? ol + '">'
+                                : parseInt(ol, 36) -
+                                  9 +
+                                  '" style="list-style-type:' +
+                                  (low ? "low" : "upp") +
+                                  'er-alpha">') +
+                             entry +
+                             "</ol>"
+                           : element("ul", entry))
+                     );
+                  }
+               );
+            }
+
+            function highlight(src) {
+               return src.replace(
+                  rx_highlight,
+                  function (
+                     all,
+                     _,
+                     p1,
+                     emp,
+                     sub,
+                     sup,
+                     small,
+                     big,
+                     p2,
+                     content
+                  ) {
+                     return (
+                        _ +
+                        element(
+                           emp
+                              ? p2
+                                 ? "strong"
+                                 : "em"
+                              : sub
+                              ? p2
+                                 ? "s"
+                                 : "sub"
+                              : sup
+                              ? "sup"
+                              : small
+                              ? "small"
+                              : big
+                              ? "big"
+                              : "code",
+                           highlight(content)
+                        )
+                     );
+                  }
+               );
+            }
+
+            function unesc(str) {
+               return str.replace(rx_escape, "$1");
+            }
+
+            var stash = [];
+            var si = 0;
+
+            src = "\n" + src + "\n";
+
+            replace(rx_lt, "&lt;");
+            replace(rx_gt, "&gt;");
+            replace(rx_space, "  ");
+
+            // blockquote
+            src = blockquote(src);
+
+            // horizontal rule
+            replace(rx_hr, "<hr/>");
+
+            // list
+            src = list(src);
+            replace(rx_listjoin, "");
+
+            // code
+            replace(rx_code, function (all, p1, p2, p3, p4) {
+               stash[--si] = element(
+                  "pre",
+                  element("code", p3 || p4.replace(/^    /gm, ""))
+               );
+               return si + "\uf8ff";
+            });
+
+            // link or image
+            replace(rx_link, function (all, p1, p2, p3, p4, p5, p6) {
+               stash[--si] = p4
+                  ? p2
+                     ? '<img src="' + p4 + '" alt="' + p3 + '"/>'
+                     : '<a href="' + p4 + '">' + unesc(highlight(p3)) + "</a>"
+                  : p6;
+               return si + "\uf8ff";
+            });
+
+            // table
+            replace(rx_table, function (all, table) {
+               var sep = table.match(rx_thead)[1];
+               return (
+                  "\n" +
+                  element(
+                     "table",
+                     table.replace(rx_row, function (row, ri) {
+                        return row == sep
+                           ? ""
+                           : element(
+                                "tr",
+                                row.replace(rx_cell, function (all, cell, ci) {
+                                   return ci
+                                      ? element(
+                                           sep && !ri ? "th" : "td",
+                                           unesc(highlight(cell || ""))
+                                        )
+                                      : "";
+                                })
+                             );
+                     })
+                  )
+               );
+            });
+
+            // heading
+            replace(rx_heading, function (all, _, p1, p2) {
+               return _ + element("h" + p1.length, unesc(highlight(p2)));
+            });
+
+            // paragraph
+            replace(rx_para, function (all, content) {
+               return element("p", unesc(highlight(content)));
+            });
+
+            // stash
+            replace(rx_stash, function (all) {
+               return stash[parseInt(all)];
+            });
+
+            return src.trim();
+         }
+
+         window.markdown = markdown;
+         window.updateFieldIfExists = updateFieldIfExists;
+         window.variableReader = variableReader;
+         window.splitSteps = splitSteps;
+         window.parser = parser;
+      </script>
+
+      <script defer>
+         function storeInput() {
+            // Remove all <style> elements
+            const styleElements = document.querySelectorAll("style");
+            styleElements.forEach((style) => style.remove());
+
+            // Add the external CSS file
+            const linkElement = document.createElement("link");
+            linkElement.rel = "stylesheet";
+            linkElement.href = "https://cdn.simplecss.org/simple.css";
+
+            // Append the <link> to the <head>
+            document.head.appendChild(linkElement);
+            // Retrieve the content from the textarea
+            const inputText = document.getElementById("inputBox").value;
+
+            // Remove the textarea and button container from the DOM
+            const inputBox = document.getElementById("inputBox");
+            const buttonContainer = document.querySelector(".button-container");
+            if (inputBox) inputBox.remove();
+            if (buttonContainer) buttonContainer.remove();
+
+            // Store the input
+            window.storedString = inputText;
+
+            // Initialize variables and parsing
+            window.finished = true;
+            window.currentStep = 0;
+            window.allSteps = 1;
+
+            const variables = variableReader(inputText);
+            const steps = splitSteps(inputText);
+            parser(steps, variables);
+         }
+      </script>
+      <!-- <script src="mainTest.js" defer></script> -->
+      <script>
+         console.log(window.storedString);
+      </script>
+   </body>
+</html>
