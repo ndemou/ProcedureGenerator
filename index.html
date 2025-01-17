@@ -354,6 +354,7 @@
             if (bool) {
                createText(code);
             }
+            console.log("returning i = ", i);
             return i;
          }
 
@@ -380,13 +381,15 @@
                         qeustionParsing(line);
                      } else if (line.trimEnd() === "{") {
                         i = checkForMultiLineEval(step, i);
-                     } else if (line.trim().startsWith("{showif")) {
+                     } else if (/^\{\s*showif/.test(line.trim())) {
+                        console.log("This line gets in: ", line);
                         i = checkForShowIf(step, i);
                      } else {
                         const regex = /\{\s*[a-zA-Z_$][a-zA-Z0-9_$]*\s*\}/g;
                         if (line.match(regex)) {
                            line = checkForCodeInLine(line);
                         }
+                        console.log("Are you the one that prints the }");
                         createText(line);
                      }
                   }
