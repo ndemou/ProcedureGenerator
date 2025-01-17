@@ -3,7 +3,7 @@
    <head>
       <meta charset="UTF-8" />
       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      <title>Full Page Input with String Storage</title>
+      <title>ProcedureGenerator</title>
       <style>
          html,
          body {
@@ -52,6 +52,7 @@
       <div id="website_content"></div> -->
 
       <script defer>
+         // function that makes the objects
          function focusNextQuestion() {
             if (allSteps > currentStep) {
                const questions =
@@ -238,11 +239,11 @@
          }
 
          function qeustionParsing(line) {
-            const regexForMultipleChoice = /\(One of: [A-Za-z0-9_, ]+\)$/;
+            const regexForMultipleChoice = /\(One of:\s*[A-Za-z0-9_, ]+\)$/;
             if (regexForMultipleChoice.test(line)) {
                const str = line.substring(2).trim();
                console.log("mutliple choice: " + str);
-               const regexForSpliting = /^(.*)\[(.*?)\]\(One of: (.*?)\)$/;
+               const regexForSpliting = /^(.*)\[(.*?)\]\(One of:\s*(.*?)\)$/;
                // TODO add no numbers at the start of the variable
                const match = str.match(regexForSpliting);
                // making the array that holds the options
