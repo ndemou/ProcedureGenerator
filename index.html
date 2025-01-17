@@ -205,7 +205,7 @@
          }
 
          function variableReader(textFile) {
-            const firstRegex = /\[[a-z_][a-z0-9_]*\](\([^)]*\))?\s*$/gim;
+            const firstRegex = /\[[a-z_][a-z0-9_]*\]\s*(\([^)]*\))?\s*$/gim;
 
             const varMatches = Array.from(textFile.matchAll(firstRegex));
 
@@ -239,11 +239,12 @@
          }
 
          function qeustionParsing(line) {
-            const regexForMultipleChoice = /\(One of:\s*[A-Za-z0-9_, ]+\)$/;
+            const regexForMultipleChoice = /\(\s*One of:\s*[A-Za-z0-9_, ]+\)$/;
             if (regexForMultipleChoice.test(line)) {
                const str = line.substring(2).trim();
                console.log("mutliple choice: " + str);
-               const regexForSpliting = /^(.*)\[(.*?)\]\(One of:\s*(.*?)\)$/;
+               const regexForSpliting =
+                  /^(.*)\[(.*?)\]\s*\(\s*One of:\s*(.*?)\)$/;
                // TODO add no numbers at the start of the variable
                const match = str.match(regexForSpliting);
                // making the array that holds the options
@@ -271,16 +272,17 @@
                // regex that splits the question in three parts.
                // The actual question, the variable, and the question type;
                // TODO no numbers at the start of the variable
-               const regexForSpliting = /^(.*?)\[(.*?)\](?:\(([^)]+)\))?$/;
+               const regexForSpliting = /^(.*?)\[(.*?)\]\s*(?:\(([^)]+)\))?$/;
 
                const match = str.match(regexForSpliting);
                console.log("Question: ", match[1]);
                console.log("Field: ", match[2]);
-               const type = match[3] || "text";
+               let type = match[3] || "text";
                console.log("Type: ", type);
 
                if (match[2] in globalThis) {
                   console.log("We creating the type: ", type);
+                  type = type.trim();
                   createInputQuestion(match[1], type, (answer) => {
                      // variables[match[2]] = answer;
                      globalThis[match[2]] = answer;
