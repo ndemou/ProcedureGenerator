@@ -74,7 +74,6 @@
          }
 
          function createInputQuestion(questionText, type, callback) {
-            // console.log("I get called");
             const questionContainer = document.createElement("div");
             // const questionTextElement = document.createElement("span");
             // questionTextElement.textContent = questionText;
@@ -130,6 +129,11 @@
             const buttons = questionContainer.querySelectorAll("button");
             buttons.forEach((button) => {
                button.addEventListener("click", () => {
+                  buttons.forEach((btn) => {
+                     btn.style.backgroundColor = "";
+                     btn.style.outline = "";
+                  });
+
                   // change button color when clicked
                   button.style.backgroundColor = "#e64833";
                   button.style.outline = `2px solid #ffffff`;
@@ -239,6 +243,7 @@
          }
 
          function qeustionParsing(line) {
+            // One of question
             const regexForMultipleChoice = /\(\s*One of:\s*[A-Za-z0-9_, ]+\)$/;
             if (regexForMultipleChoice.test(line)) {
                const str = line.substring(2).trim();
