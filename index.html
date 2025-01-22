@@ -18,7 +18,7 @@
             border: none;
             outline: none;
             resize: none;
-            font-family: "FiraCode Nerd Font Mono", monospace; /* Use your custom monospace font */
+            font-family: Arial, sans-serif;
             font-size: 16px;
             padding: 10px;
             box-sizing: border-box;
@@ -104,8 +104,14 @@
          function createText(text) {
             const line = document.createElement("div");
             // TODO
-            //console.log("Text is:", text);
-            line.innerHTML = markdown(text);
+            console.log("Source is:", text);
+            text = markdown(text)
+            // nd: hack: replace to restore <div ...> ... </div>
+            text = text.replace('&lt;/div&gt;','</div>').replace(/&lt;div (.*)&gt;/,'<div $1>').replace('<p></div></p>','</div>').replace(/<p>(<div [^>]*>)<\/p>/,'$1')
+            //console.log("----------------"); console.log("Output text is:"); console.log(text); console.log("----------------")
+            console.log("Output is:", text);
+            line.innerHTML = text
+
             const mainBody = document.getElementById("website_content");
             mainBody.appendChild(line);
          }
@@ -394,7 +400,7 @@
                         if (line.match(regex)) {
                            line = checkForCodeInLine(line);
                         }
-                        console.log("Are you the one that prints the }");
+                        //console.log("Are you the one that prints the }");
                         createText(line);
                      }
                   }
@@ -638,6 +644,15 @@
       </script>
 
       <script defer>
+         // Function to initialize the page and restore saved input
+         function initializePage() {
+            const savedInput = localStorage.getItem("storedInput");
+            const inputBox = document.getElementById("inputBox");
+            if (savedInput && inputBox) {
+               inputBox.value = savedInput; // Load saved input into textarea
+            }
+         }      
+         
          function storeInput() {
             // Remove all <style> elements
             const styleElements = document.querySelectorAll("style");
@@ -762,7 +777,11 @@
                </div>
             `;
          }
+         
+        // Call initializePage when the script runs
+        window.onload = initializePage;
       </script>
+      
       <!-- <script src="mainTest.js" defer></script> -->
       <script>
          console.log(window.storedString);
