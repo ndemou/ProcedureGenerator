@@ -104,8 +104,14 @@
          function createText(text) {
             const line = document.createElement("div");
             // TODO
-            //console.log("Text is:", text);
-            line.innerHTML = markdown(text);
+            //console.log("Source is:", text);
+            text = markdown(text)
+            // nd: a _hacky_ way to allow us to maintain 
+            // <div ...> ... </div> html code in the source code
+            // (by default markdown() escapes html tags; e.g. it converts < and > to &lt; and &gt; )
+            text = text.replace('&lt;/div&gt;','</div>').replace(/&lt;div (.*)&gt;/,'<div $1>').replace('<p></div></p>','</div>').replace(/<p>(<div [^>]*>)<\/p>/,'$1')
+            //console.log("----------------"); console.log("Restored div text is:"); console.log(text); console.log("----------------")
+            line.innerHTML = text
             const mainBody = document.getElementById("website_content");
             mainBody.appendChild(line);
          }
