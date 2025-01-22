@@ -638,6 +638,15 @@
       </script>
 
       <script defer>
+         // Function to initialize the page and restore saved input
+         function initializePage() {
+            const savedInput = localStorage.getItem("storedInput");
+            const inputBox = document.getElementById("inputBox");
+            if (savedInput && inputBox) {
+               inputBox.value = savedInput; // Load saved input into textarea
+            }
+         }      
+         
          function storeInput() {
             // Remove all <style> elements
             const styleElements = document.querySelectorAll("style");
@@ -762,7 +771,11 @@
                </div>
             `;
          }
+         
+        // Call initializePage when the script runs
+        window.onload = initializePage;
       </script>
+      
       <!-- <script src="mainTest.js" defer></script> -->
       <script>
          console.log(window.storedString);
