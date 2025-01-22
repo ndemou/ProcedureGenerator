@@ -18,7 +18,7 @@
             border: none;
             outline: none;
             resize: none;
-            font-family: Arial, sans-serif;
+            font-family: "FiraCode Nerd Font Mono", monospace; /* Use your custom monospace font */
             font-size: 16px;
             padding: 10px;
             box-sizing: border-box;
@@ -104,14 +104,8 @@
          function createText(text) {
             const line = document.createElement("div");
             // TODO
-            console.log("Source is:", text);
-            text = markdown(text)
-            // nd: hack: replace to restore <div ...> ... </div>
-            text = text.replace('&lt;/div&gt;','</div>').replace(/&lt;div (.*)&gt;/,'<div $1>').replace('<p></div></p>','</div>').replace(/<p>(<div [^>]*>)<\/p>/,'$1')
-            //console.log("----------------"); console.log("Output text is:"); console.log(text); console.log("----------------")
-            console.log("Output is:", text);
-            line.innerHTML = text
-
+            //console.log("Text is:", text);
+            line.innerHTML = markdown(text);
             const mainBody = document.getElementById("website_content");
             mainBody.appendChild(line);
          }
@@ -400,7 +394,7 @@
                         if (line.match(regex)) {
                            line = checkForCodeInLine(line);
                         }
-                        //console.log("Are you the one that prints the }");
+                        console.log("Are you the one that prints the }");
                         createText(line);
                      }
                   }
