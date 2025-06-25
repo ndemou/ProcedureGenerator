@@ -211,7 +211,7 @@ export async function downloadGeneratedPage(steps, text) {
    const executeShowIf = `
    <script defer>
       function evaluateConditions() {
-         console.log("[evaluateConditions] Running...");
+         console.log("[evaluateConditions] started");
          const visibleSteps = [...document.querySelectorAll('[class^="step"]')]
             .filter(div => div.style.display !== 'none');
 
@@ -219,7 +219,10 @@ export async function downloadGeneratedPage(steps, text) {
             const ifBlocks = step.querySelectorAll('.if');
             ifBlocks.forEach(ifDiv => {
                const expr = ifDiv.getAttribute('data-expression')?.trim();
-               if (!expr) return;
+               if (!expr) {
+                  console.log("[evaluateConditions] exited");
+                  return;
+               }
 
                let result = false;
 
@@ -241,6 +244,7 @@ export async function downloadGeneratedPage(steps, text) {
                ifDiv.style.display = result ? 'block' : 'none';
             });
          });
+         console.log("[evaluateConditions] exited");
       }
    </script>
 `;
